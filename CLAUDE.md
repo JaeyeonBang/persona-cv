@@ -39,6 +39,32 @@ cd backend && pip install -r requirements.txt && uvicorn main:app --port 8001 --
 - `frontend/.env.local` — Supabase, OpenRouter, FASTAPI_URL
 - `backend/.env` — Supabase, OpenRouter
 
+## 개발 규칙
+
+### 수정 후 보고 전 필수 E2E 검증
+
+**UI/기능 수정 시 반드시 curl로 실제 렌더 확인 후 보고한다.**
+
+```bash
+# 레이아웃 변경 검증 예시
+curl -s http://localhost:3000/<username> | python3 -c "
+import sys
+html = sys.stdin.read()
+pos_portfolio = html.find('포트폴리오')
+pos_chat      = html.find('내 명함 AI')
+print('portfolio pos:', pos_portfolio, '/ chat pos:', pos_chat)
+print('순서:', 'OK' if pos_portfolio < pos_chat else '오류')
+"
+
+# API 동작 검증
+curl -s -X POST http://localhost:3000/api/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"demo","question":"테스트","config":{},"sessionId":"e2e"}' \
+  --no-buffer -m 15 | head -5
+```
+
+stale SSR, 캐시, 파일 미저장 모두 코드만 보면 못 잡는다. 반드시 실행해서 확인 후 보고한다.
+
 ## 기술 스택
 
 | Layer | Tech |
