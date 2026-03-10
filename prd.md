@@ -145,7 +145,39 @@ conversations (
 
 ---
 
-## 7. MVP 이후 고려 기능 (현재 범위 외)
+## 7. Phase 10: 예상 Q&A (Pinned FAQ)
+
+### 개요
+Owner가 예상 질문 목록을 미리 등록하고 AI 초안 답변을 확인/수정한다. 방문자 채팅 시 해당 Q&A를 RAG보다 우선 활용한다.
+
+### 요구사항
+
+| ID | 요구사항 | 세부 내용 |
+|:---|:---|:---|
+| **F-501** | 예상 Q&A 온보딩 | 프로필 최초 저장 후 `/dashboard/onboarding` 페이지로 이동. 질문 입력 → AI 답변 초안 생성 → 텍스트 편집 → 저장. |
+| **F-502** | AI 초안 생성 | `POST /api/pinned-qa/generate` — 질문 + 페르소나 프로필을 LLM에 전달해 답변 초안 생성. |
+| **F-503** | 텍스트 직접 편집 | 생성된 답변이 마음에 안 들면 textarea로 자유 수정 후 저장. |
+| **F-504** | 대시보드 관리 | 대시보드 설정 탭에 `PinnedQASection` 추가 — 목록 조회, 수정, 삭제, 새 항목 추가. |
+| **F-505** | 채팅 우선순위 | `retrieval_node`에서 해당 사용자의 pinned_qa를 시스템 프롬프트에 포함. LLM이 관련 질문을 사전 답변 기반으로 우선 응답. |
+
+### DB 스키마 추가
+
+```sql
+-- 예상 Q&A
+pinned_qa (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  question text NOT NULL,
+  answer text NOT NULL,
+  display_order int DEFAULT 0,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+)
+```
+
+---
+
+## 8. MVP 이후 고려 기능 (현재 범위 외)
 
 | ID | 기능 | 설명 |
 |:---|:---|:---|

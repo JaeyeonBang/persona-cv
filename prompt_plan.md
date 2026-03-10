@@ -1,7 +1,7 @@
 # PersonaID MVP — 개발 계획 (prompt_plan.md)
 
-> 최종 확정: 2026-03-07
-> 빌드 순서: Phase 1 → 2 → 3 → 4 → 5
+> 최종 확정: 2026-03-07 | 최종 업데이트: 2026-03-11
+> 빌드 순서: Phase 1 → 2 → 3 → 4 → 5 → ... → Phase 10
 
 ---
 
@@ -348,3 +348,84 @@ export const DUMMY_PERSONA = {
 - FastAPI backend: routers/chat (SSE), routers/documents, services/llm, services/search, services/embeddings, services/document_processor, services/conversations
 - Next.js → FastAPI 프록시: /api/chat, /api/process-document
 - Pytest: 32개 테스트 통과
+
+---
+
+## Phase 10: 예상 Q&A (Pinned FAQ)
+
+**목표**: Owner가 예상 Q&A를 미리 등록하고 AI 초안 답변을 확인/수정. 채팅 시 우선 활용.
+
+### 배경
+- 방문자가 자주 하는 질문에 대해 Owner가 직접 답변을 준비하고 싶음
+- AI가 RAG로 생성하는 답변보다 Owner가 직접 큐레이션한 답변이 더 정확할 수 있음
+- 온보딩 UX로 프로필 설정 직후 Q&A 등록을 유도
+
+### 완료 기준
+- [ ] 프로필 저장 후 `/dashboard/onboarding` 페이지로 이동
+- [ ] 질문 입력 → "AI 답변 생성" → 답변 프리뷰 → 텍스트 편집 → 저장
+- [ ] 대시보드에서도 언제든 Q&A 수정/추가/삭제
+- [ ] 방문자 채팅 시 pinned_qa가 시스템 프롬프트에 포함되어 우선 활용
+- [ ] Pytest 신규 테스트 통과
+- [ ] Playwright 스크린샷으로 UI 동작 확인
+
+### Tasks
+
+#### 10-1. DB 스키마
+- [ ] `frontend/supabase/migrations/004_pinned_qa.sql`
+  ```sql
+  CREATE TABLE pinned_qa (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+    question text NOT NULL,
+    answer text NOT NULL,
+    display_order int DEFAULT 0,
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now()
+  );
+  ALTER TABLE pinned_qa ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "read_all" ON pinned_qa FOR SELECT USING (true);
+  CREATE POLICY "owner_write" ON pinned_qa FOR ALL USING (
+    user_id IN (SELECT id FROM users WHERE auth_id = auth.uid())
+  );
+  ```
+
+#### 10-2. 백엔드 API
+- [ ] `backend/routers/pinned_qa.py`
+  - `GET  /api/pinned-qa?username=xxx` — Q&A 목록 조회 (공개)
+  - `POST /api/pinned-qa` — 새 Q&A 저장 (username으로 user 찾기)
+  - `PUT  /api/pinned-qa/{id}` — 답변 수정
+  - `DELETE /api/pinned-qa/{id}` — 삭제
+  - `POST /api/pinned-qa/generate` — AI 답변 초안 생성 (LLM 호출)
+- [ ] `backend/main.py` — 라우터 등록
+
+#### 10-3. 채팅 우선순위 연동
+- [ ] `backend/services/agents/state.py` — `pinned_qa_context: str` 필드 추가
+- [ ] `backend/services/agents/nodes.py` — `retrieval_node`에서 pinned_qa 조회 후 state에 추가
+- [ ] `backend/services/llm.py` — `build_system_prompt`에 "## 사전 준비된 답변" 섹션 추가
+
+#### 10-4. 프론트엔드
+- [ ] `frontend/src/lib/types.ts` — `PinnedQA` 타입 추가
+- [ ] `frontend/src/app/api/pinned-qa/[[...path]]/route.ts` — FastAPI 프록시
+- [ ] `frontend/src/app/dashboard/onboarding/page.tsx` — 온보딩 Q&A 등록 페이지
+- [ ] `frontend/src/components/dashboard/pinned-qa-section.tsx` — 대시보드 섹션
+- [ ] `frontend/src/app/dashboard/page.tsx` — PinnedQASection 추가
+
+#### 10-5. 테스트
+- [ ] `backend/tests/test_pinned_qa.py` — CRUD + generate 엔드포인트 테스트
+- [ ] Playwright 스크린샷 검증
+
+### 파일 변경 목록 (12개)
+| 분류 | 파일 |
+|---|---|
+| 신규 | `frontend/supabase/migrations/004_pinned_qa.sql` |
+| 신규 | `backend/routers/pinned_qa.py` |
+| 신규 | `frontend/src/app/dashboard/onboarding/page.tsx` |
+| 신규 | `frontend/src/components/dashboard/pinned-qa-section.tsx` |
+| 신규 | `frontend/src/app/api/pinned-qa/[[...path]]/route.ts` |
+| 신규 | `backend/tests/test_pinned_qa.py` |
+| 수정 | `backend/main.py` |
+| 수정 | `backend/services/agents/nodes.py` |
+| 수정 | `backend/services/agents/state.py` |
+| 수정 | `backend/services/llm.py` |
+| 수정 | `frontend/src/app/dashboard/page.tsx` |
+| 수정 | `frontend/src/lib/types.ts` |

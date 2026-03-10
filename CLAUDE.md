@@ -41,6 +41,29 @@ cd backend && pip install -r requirements.txt && uvicorn main:app --port 8001 --
 
 ## 개발 규칙
 
+### 기능 추가 후 Playwright 테스트 필수 (CRITICAL)
+
+**기능을 추가한 뒤에는 무조건 Playwright로 스크린샷을 찍어 실제 동작을 확인한다.**
+
+```bash
+# Playwright 스크린샷 스크립트 예시 (Node.js)
+const { chromium } = require('./frontend/node_modules/playwright')
+;(async () => {
+  const browser = await chromium.launch()
+  const page = await browser.newPage()
+  await page.goto('http://localhost:3000/<username>', { waitUntil: 'networkidle' })
+  await page.screenshot({ path: '/tmp/feature-test.png', fullPage: true })
+  // 인터랙션 후 추가 스크린샷
+  await browser.close()
+})()
+```
+
+검증 항목:
+- 컴포넌트가 실제로 렌더링되는가
+- 인터랙션(클릭, 입력, 네비게이션)이 정상 동작하는가
+- 레이아웃이 데스크톱/모바일 모두 정상인가
+- 콘솔 에러가 없는가
+
 ### 수정 후 보고 전 필수 E2E 검증
 
 **UI/기능 수정 시 반드시 curl로 실제 렌더 확인 후 보고한다.**
