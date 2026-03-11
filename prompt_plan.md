@@ -429,3 +429,50 @@ export const DUMMY_PERSONA = {
 | 수정 | `backend/services/llm.py` |
 | 수정 | `frontend/src/app/dashboard/page.tsx` |
 | 수정 | `frontend/src/lib/types.ts` |
+
+---
+
+## Phase 11: 예상 Q&A UX 개선 + 포트폴리오 인용
+
+**목표**: 예상 Q&A를 대시보드 탭으로 통합하고, 답변 작성 시 포트폴리오 문서를 직접 인용할 수 있는 인터페이스 추가.
+
+### 11-1. 대시보드 탭 재설계
+- [x] `/dashboard?tab=qa` 탭으로 예상 Q&A 통합 (별도 페이지 → 탭 전환)
+- [x] 탭 순서 변경: 설정 / 예상 Q&A / 대화 히스토리
+- [x] 설정 완료 버튼 → `?tab=qa` 이동
+- [x] PC UI 양 열 하단 라인 맞춤 (`flex-1 [&>section]:h-full`)
+
+### 11-2. 인라인 편집 + AI 자동 추천
+- [x] 편집 버튼 제거 — textarea 항상 활성화 (인라인 편집)
+- [x] Dirty state 감지 → 저장 버튼 노출
+- [x] `POST /api/pinned-qa/suggest` 엔드포인트 — 2-step LLM
+  - Step 1: 문서 + 프로필 분석 → 면접 예상 질문 5개 (plain text)
+  - Step 2: 질문별 병렬 답변 생성 (`asyncio.gather`)
+  - GLM-4.7-flash max_tokens: suggest=8000, generate=4000
+
+### 11-3. 포트폴리오 인용 UI (TDD)
+- [x] `frontend/src/lib/qa-citation.ts` — 순수 함수 3개
+  - `insertCitationAtCursor(current, cursorPos, doc)` — 커서 위치에 `[출처: 제목]` 삽입
+  - `formatCitation(doc)` — `[출처: ${doc.title}]` 반환
+  - `filterCitableDocs(docs)` — `status === 'done'` 필터
+- [x] `frontend/src/lib/__tests__/qa-citation.test.ts` — 13개 단위 테스트 (전체 통과)
+- [x] `frontend/src/components/dashboard/portfolio-citation-panel.tsx`
+  - 접이식 패널 (기본 닫힘)
+  - 완료 상태 문서만 표시, 타입 아이콘 포함
+  - "인용" 버튼 클릭 → `onCite(doc)` 콜백 + 패널 닫힘
+- [x] `qa-client.tsx` — `portfolio: Document[]` prop 추가
+  - 각 답변 textarea에 `PortfolioCitationPanel` 추가
+  - 커서 위치 추적 (`useRef<Map<string, HTMLTextAreaElement>>`)
+  - `handleCite(doc, itemId)` — `insertCitationAtCursor` 호출 후 커서 복원
+  - "직접 추가" 폼에도 인용 패널 적용
+- [x] `dashboard/page.tsx` — `portfolio={docs}` prop 전달
+
+### 파일 변경 목록 (6개)
+| 분류 | 파일 |
+|---|---|
+| 신규 | `frontend/src/lib/qa-citation.ts` |
+| 신규 | `frontend/src/lib/__tests__/qa-citation.test.ts` |
+| 신규 | `frontend/src/components/dashboard/portfolio-citation-panel.tsx` |
+| 수정 | `frontend/src/app/dashboard/qa/qa-client.tsx` |
+| 수정 | `frontend/src/app/dashboard/page.tsx` |
+| 수정 | `frontend/src/app/dashboard/profile-section.tsx` |
