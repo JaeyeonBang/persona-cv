@@ -311,6 +311,10 @@ export const DUMMY_PERSONA = {
 - [x] Phase 7: Auth 완성 (Middleware, 비밀번호 재설정, Rate Limiting) — 2026-03-09
 - [x] Phase 8: Graphiti 연동 (Graph RAG, 하이브리드 검색 폴백) — 2026-03-09
 - [x] Phase 9: Citation UI + Owner 히스토리 대시보드 — 2026-03-09
+- [x] 버그 픽스 & 기술 부채 정리 — 2026-03-18
+- [x] Phase 12: 방문자 피드백 + 인사이트 차트 — 2026-03-18
+- [x] Phase 13: QR코드 / 명함 공유 — 2026-03-18
+- [x] Phase 14: 방문자 페이지 테마 커스터마이징 — 2026-03-18
 
 ## Phase 8 완료 내역 (2026-03-09)
 
@@ -476,3 +480,64 @@ export const DUMMY_PERSONA = {
 | 수정 | `frontend/src/app/dashboard/qa/qa-client.tsx` |
 | 수정 | `frontend/src/app/dashboard/page.tsx` |
 | 수정 | `frontend/src/app/dashboard/profile-section.tsx` |
+
+---
+
+## 버그 픽스 & 기술 부채 정리 (2026-03-18)
+
+### 수정 내역
+- [x] `backend/CLAUDE.md` — 실제 엔드포인트 전체 반영 (pinned_qa, graphiti, conversations)
+- [x] `backend/services/conversations.py` — `save_conversation`에 `conversation_id` 파라미터 추가 (uuid pre-generate 지원)
+- [x] `frontend/src/lib/dummy-data.ts` — `DUMMY_PERSONA`에 `theme: 'default'` 추가 (TS 타입 정합성)
+
+---
+
+## Phase 12: 방문자 인사이트 + 피드백 (2026-03-18)
+
+**목표**: 방문자 답변에 좋아요/별로예요 피드백, 대시보드에 일별 추이 차트 + 만족도 통계.
+
+### 완료 내역
+- [x] `frontend/supabase/migrations/005_feedback_theme.sql` — conversations.feedback 컬럼, users.theme 컬럼 추가
+- [x] `backend/routers/conversations.py` (신규) — `POST /api/conversations/{id}/feedback`
+- [x] `backend/routers/chat.py` — SSE 첫 이벤트로 `conversation_id` 방출, 백그라운드 저장 시 동일 ID 사용
+- [x] `backend/main.py` — conversations 라우터 등록
+- [x] `frontend/src/app/api/conversations/[...path]/route.ts` (신규) — Next.js 프록시
+- [x] `frontend/src/components/persona/chat-bubble.tsx` — 피드백 버튼(👍/👎), `conversationId`/`feedback` 필드 추가
+- [x] `frontend/src/components/persona/chat-messages.tsx` — `onFeedback` prop 전달
+- [x] `frontend/src/components/persona/visitor-page.tsx` — `conversation_id` SSE 수신, 피드백 API 호출
+- [x] `frontend/src/components/dashboard/history-section.tsx` — 일별 차트(7일), 만족도 통계 카드, 피드백 이모지 표시
+
+---
+
+## Phase 13: QR코드 / 명함 공유 (2026-03-18)
+
+**목표**: 대시보드에서 QR코드 생성 + URL 복사 + 소셜 공유, 오프라인 네트워킹 지원.
+
+### 완료 내역
+- [x] `npm install qrcode @types/qrcode`
+- [x] `frontend/src/components/dashboard/qr-share-section.tsx` (신규) — QR 코드(200px), URL 복사, Web Share API, QR 이미지 다운로드
+- [x] `frontend/src/app/dashboard/page.tsx` — 설정 탭 하단에 QRShareSection 추가
+
+---
+
+## Phase 14: 방문자 페이지 테마 커스터마이징 (2026-03-18)
+
+**목표**: Owner가 4가지 테마(기본/테크/크리에이티브/비즈니스) 중 선택해 방문자 명함 페이지 색상 변경.
+
+### 완료 내역
+- [x] `frontend/supabase/migrations/005_feedback_theme.sql` — users.theme 컬럼 추가 (위와 동일 파일)
+- [x] `frontend/src/lib/types.ts` — `Theme` 타입 추가, `User`/`Persona`에 theme 필드
+- [x] `frontend/src/lib/user-to-persona.ts` — theme 매핑 추가
+- [x] `frontend/src/app/dashboard/actions.ts` — `saveTheme()` Server Action 추가
+- [x] `frontend/src/components/dashboard/theme-section.tsx` (신규) — 4가지 테마 카드 UI, dirty state 저장 버튼
+- [x] `frontend/src/app/dashboard/page.tsx` — 설정 탭에 ThemeSection 추가
+- [x] `frontend/src/components/persona/visitor-page.tsx` — THEME_STYLES 맵으로 테마별 색상 적용
+
+### 테마 스펙
+| 테마 | 배경 | 카드 | 용도 |
+|---|---|---|---|
+| default | zinc-50 | white | 기본 |
+| tech | gray-950 | gray-900 | 개발자/테크 |
+| creative | violet→pink 그라데이션 | white/80 backdrop | 크리에이터 |
+| business | slate-100 | white | 비즈니스/컨설턴트 |
+
