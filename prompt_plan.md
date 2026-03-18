@@ -541,3 +541,58 @@ export const DUMMY_PERSONA = {
 | creative | violet→pink 그라데이션 | white/80 backdrop | 크리에이터 |
 | business | slate-100 | white | 비즈니스/컨설턴트 |
 
+
+---
+
+## Phase 15: 소셜 링크 + 방문자 프로필 카드 완성 (2026-03-18)
+
+**목표**: GitHub/LinkedIn URL을 방문자 페이지 프로필 카드에 아이콘 링크로 표시.
+
+### 배경
+- `documents` 테이블에 type='github'|'linkedin'으로 소셜 URL이 저장되어 있지만 방문자 페이지에서 표시되지 않음
+- DB 변경 없이 기존 `documents` prop에서 추출 가능
+
+### Tasks
+- [x] `visitor-page.tsx` — documents에서 github/linkedin source_url 추출 후 ProfileHeader에 전달
+- [x] `profile-header.tsx` — socialLinks prop 추가, GitHub/LinkedIn/External 아이콘 링크 렌더링
+- [x] Persona 타입에 socialLinks 추가 (선택적) — documents prop에서 직접 추출
+- [x] Vitest 유닛 테스트 (링크 추출 로직) — 7 passed
+- [x] Playwright E2E — 소셜 링크 아이콘 렌더링 확인
+
+### 완료 기준
+- 방문자 페이지 프로필 카드에 소셜 링크 아이콘 표시
+- 클릭 시 새 탭으로 이동
+
+---
+
+## Phase 16: 방문자 수 카운터 (F-403 부분) (2026-03-18)
+
+**목표**: 방문자 페이지 로드 수를 추적해 대시보드에 "총 방문자 수" 카드 추가.
+
+### Tasks
+- [x] `supabase/migrations/006_view_count.sql` — users.view_count INTEGER DEFAULT 0 추가
+- [x] `frontend/src/app/[username]/page.tsx` — 서버 컴포넌트에서 apiFetch로 view_count 증가
+- [x] `backend/routers/views.py` + Supabase RPC `increment_view_count(username)` 함수 작성
+- [x] 대시보드 히스토리 섹션에 "페이지 뷰" 통계 카드 추가
+- [x] Pytest — view count increment 테스트 — 4 passed
+- [x] Playwright E2E — 방문 후 카운터 증가 확인 — 5 passed
+
+---
+
+## Phase 17: 프로필 완성도 카드 (2026-03-18)
+
+**목표**: 대시보드 설정 탭에 프로필 완성도 체크리스트 카드 표시. 100% 완성 시 자동 숨김.
+
+### 완료 내역
+- [x] `src/lib/profile-completeness.ts` — `calcCompleteness()` 순수 함수 (6개 항목, %)
+- [x] `src/lib/__tests__/profile-completeness.test.ts` — 14개 유닛 테스트
+- [x] `src/components/dashboard/profile-completeness-card.tsx` — 진행 바 + 체크리스트 카드
+- [x] `src/app/dashboard/page.tsx` — 설정 탭 상단에 카드 삽입
+
+### 완성도 항목
+1. 이름 · 직책 입력
+2. 한줄 소개 작성
+3. 프로필 사진 업로드
+4. 이력서 / 포트폴리오 등록
+5. GitHub / LinkedIn 연결
+6. 예상 Q&A 1개 이상 등록
