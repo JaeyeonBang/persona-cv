@@ -315,6 +315,12 @@ export const DUMMY_PERSONA = {
 - [x] Phase 12: 방문자 피드백 + 인사이트 차트 — 2026-03-18
 - [x] Phase 13: QR코드 / 명함 공유 — 2026-03-18
 - [x] Phase 14: 방문자 페이지 테마 커스터마이징 — 2026-03-18
+- [x] Phase 15: 소셜 링크 + 방문자 프로필 카드 완성 — 2026-03-18
+- [x] Phase 16: 방문자 수 카운터 — 2026-03-18
+- [x] Phase 17: 프로필 완성도 카드 — 2026-03-18
+- [x] Phase 18: 방문자 페이지 공유 버튼 — 2026-03-19
+- [x] Phase 19: 대화 내역 CSV 내보내기 — 2026-03-19
+- [x] Phase 20: 캐시 관리 + 캐시 답변 수정 — 2026-03-19
 
 ## Phase 8 완료 내역 (2026-03-09)
 
@@ -596,3 +602,66 @@ export const DUMMY_PERSONA = {
 4. 이력서 / 포트폴리오 등록
 5. GitHub / LinkedIn 연결
 6. 예상 Q&A 1개 이상 등록
+
+---
+
+## Phase 18: 방문자 페이지 공유 버튼 (2026-03-19)
+
+**목표**: 방문자가 명함 페이지를 다른 사람에게 쉽게 공유할 수 있는 버튼 추가 (바이럴 루프).
+
+### 완료 내역
+- [x] `visitor-page.tsx` — 채팅 헤더에 공유 버튼 추가 (Web Share API → URL 복사 폴백)
+- [x] 복사 완료 후 2초간 "복사됨" + 체크마크 상태 표시 후 원래 상태 복귀
+- [x] `src/lib/__tests__/share.test.ts` — buildShareUrl, canNativeShare, 클립보드 복사 로직 테스트 (7 passed)
+- [x] `frontend/e2e/phase18-19.spec.ts` — 공유 버튼 표시, 클립보드 복사, 상태 복귀, 레이아웃 E2E 테스트
+
+---
+
+## Phase 19: 대화 내역 CSV 내보내기 (2026-03-19)
+
+**목표**: 대시보드 히스토리 탭에서 전체 대화 내역을 CSV로 다운로드.
+
+### 완료 내역
+- [x] `src/components/dashboard/export-csv-button.tsx` — "CSV 내보내기" Client Component
+- [x] `history-section.tsx` — ExportCsvButton 통합 (섹션 헤더에 배치)
+- [x] `src/lib/export-conversations.ts` — conversationsToCsv(), downloadCsv() 순수 함수 (UTF-8 BOM 포함)
+- [x] `src/lib/__tests__/export-conversations.test.ts` — 9개 유닛 테스트 (헤더, 피드백, 이스케이프 등)
+- [x] `frontend/e2e/phase18-19.spec.ts` — 비인증 /dashboard 접근 시 로그인 리다이렉트 E2E 테스트
+
+---
+
+## Phase 20: 캐시 관리 + 캐시 답변 수정
+
+**목표**: 히스토리 탭에서 캐시된 대화를 삭제하거나 답변을 직접 수정. 수정된 답변은 이후 동일 질문에 캐시로 반환됨.
+
+### 배경
+- 현재 Q&A 캐시는 쌓이기만 하고 관리 수단이 없음
+- 잘못된 답변이 캐시에 남아 계속 반환될 수 있음
+- Owner가 캐시 답변을 직접 교정하면 더 정확한 UX 제공 가능
+
+### Tasks
+
+#### 20-1. 백엔드 API
+- [x] `backend/routers/conversations.py`
+  - `DELETE /api/conversations/{id}` — 단일 대화 삭제
+  - `POST /api/conversations/clear` — 전체 대화 삭제 (body: {user_id})
+  - `PATCH /api/conversations/{id}` — 답변 수정 (body: {answer})
+
+#### 20-2. 프론트엔드 프록시
+- [x] `frontend/src/app/api/conversations/[...path]/route.ts` — DELETE, PATCH 핸들러 추가
+
+#### 20-3. 타입 + 분석 함수
+- [x] `ConversationRow`에 `is_cached: boolean` 추가 (`history-analytics.ts`)
+
+#### 20-4. 히스토리 UI
+- [x] `frontend/src/components/dashboard/history-client.tsx` (신규) — Client Component
+  - 대화 카드에 삭제 버튼 (낙관적 UI)
+  - 답변 인라인 수정 (편집 아이콘 → textarea → 저장)
+  - is_cached 배지 표시
+  - 헤더에 "전체 삭제" 버튼 (confirm 다이얼로그)
+- [x] `frontend/src/components/dashboard/history-section.tsx` — is_cached 컬럼 추가, HistoryClient 위임
+
+#### 20-5. 테스트
+- [x] `frontend/src/lib/__tests__/cache-management.test.ts` — 순수 함수 유닛 테스트
+- [x] `backend/tests/test_conversations_router.py` — DELETE/PATCH/clear 엔드포인트 테스트 추가
+
